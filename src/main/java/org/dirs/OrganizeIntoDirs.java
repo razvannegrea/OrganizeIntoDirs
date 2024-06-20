@@ -5,12 +5,11 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Stream;
 
 public class OrganizeIntoDirs {
+
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -24,27 +23,28 @@ public class OrganizeIntoDirs {
             System.exit(-1);
         }
 
-        long start = System.currentTimeMillis();
-
-        ThreadPoolExecutor executor =
-                (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
-        executor.submit(() -> processFilesInDirectory(sourceDir));
-
-        Runtime.getRuntime().addShutdownHook(new Thread(executor::shutdownNow));
-
-        long end = System.currentTimeMillis();
-        System.out.println("OrganizeIntoDirs took " + (end - start) + "ms");
+        processFilesInDirectory(sourceDir.getAbsolutePath());
     }
 
-    private static void processFilesInDirectory(File sourceDir) {
-        Stream.of(Objects.requireNonNull(sourceDir.listFiles(new JpegFileFilter()))).forEach(OrganizeIntoDirs::processFile);
+    private static void processFilesInDirectory(String sourceDirPath) {
+        long start = System.currentTimeMillis();
+        System.out.println("Start processing: " + sourceDirPath);
+        try (Stream<Path> stream = Files.list(Paths.get(sourceDirPath))) {
+            stream.filter(filePath -> !Files.isDirectory(filePath))
+                    .map(filePath -> new File(filePath.toString()))
+                    .forEach(OrganizeIntoDirs::processFile);
+        } catch (IOException ioe) {
+            ioe.printStackTrace(System.err);
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("OrganizeIntoDirs took " + (end - start) + "ms");
     }
 
     private static void processFile(File file) {
         String currentDirPath = file.getParent();
         String targetDirName = getDirectoryNameFromDateShot(file);
-
         File targetDir = new File(currentDirPath + File.separator + targetDirName);
+
         if (!targetDir.exists()) {
             boolean dirCreated = targetDir.mkdirs();
             if (!dirCreated) {
@@ -67,7 +67,7 @@ public class OrganizeIntoDirs {
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
-        dirName = dirName.replace(":","-");
+        dirName = dirName.replace(":","-").replace("'","").substring(0, 10);
         try {
             validateDirName(dirName);
         } catch (ParseException e) {
@@ -85,7 +85,6 @@ public class OrganizeIntoDirs {
     }
 
     private static void validateDirName(String dirName) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        sdf.parse(dirName);
+        SIMPLE_DATE_FORMAT.parse(dirName);
     }
 }
