@@ -12,12 +12,12 @@ public class OrganizeIntoDirs {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: java OrganizeIntoDirs <input-dir>");
-            System.exit(0);
-        }
+//        if (args.length == 0) {
+//            System.out.println("Usage: java OrganizeIntoDirs <input-dir>");
+//            System.exit(0);
+//        }
 
-        File sourceDir = new File(args[0]);
+        File sourceDir = new File("D:/Foto/Test org poze");//new File(args[0]);
         if (!sourceDir.isDirectory()) {
             System.err.println("Input directory is not a directory.");
             System.exit(-1);
@@ -41,6 +41,9 @@ public class OrganizeIntoDirs {
     }
 
     private static void processFile(File file) {
+        if (!file.getName().endsWith(".jpg")) {
+            return;
+        }
         String currentDirPath = file.getParent();
         String targetDirName = getDirectoryNameFromDateShot(file);
         File targetDir = new File(currentDirPath + File.separator + targetDirName);
